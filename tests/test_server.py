@@ -377,3 +377,12 @@ def test_large_datasets_stay_bounded():
         assert len(opp["results"]) == 20 and opp["provenance"]["pagination"]["total"] > 20
     finally:
         server.set_client(None)
+
+
+def test_evidence_is_readable_and_next_calls_have_no_nulls(fake):
+    body = run(server.gsc_diagnose_change, PROP)
+    assert "{" not in " ".join(body["evidence"])
+    assert "clicks," in body["evidence"][0] and "average position" in body["evidence"][0]
+    opp = run(server.gsc_find_opportunities, PROP, limit=1)
+    for c in opp["recommended_next_calls"]:
+        assert None not in c["arguments"].values()

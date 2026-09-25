@@ -127,7 +127,11 @@ def envelope(
 
 
 def call(tool: str, reason: str, **arguments: Any) -> dict[str, Any]:
-    return {"tool": tool, "arguments": arguments, "reason": reason}
+    return {
+        "tool": tool,
+        "arguments": {k: val for k, val in arguments.items() if val is not None},
+        "reason": reason,
+    }
 
 
 T = TypeVar("T")
@@ -929,7 +933,9 @@ async def gsc_diagnose_change(
         f"{metric.capitalize()} {direction} by {abs(total_change):,.0f}"
         f"{f' ({pct:+.1f}%)' if pct is not None else ''} for {prop} {st}{filt}, {p.label()}."
     )
-    evidence = [f"Totals {p.label()}: current {rounded(cur)}, baseline {rounded(base)}."]
+    evidence = [
+        f"Totals {p.label()}: current {analysis.fmt_metrics(cur)}; baseline {analysis.fmt_metrics(base)}."
+    ]
     nxt: list[dict[str, Any]] = []
     for name in ("page", "query", "query_page", "device", "country"):
         bd = breakdowns.get(name)
@@ -941,7 +947,7 @@ async def gsc_diagnose_change(
             key = ", ".join(q(top[k]) for k in name.split("_"))
             evidence.append(
                 f"Largest {'negative' if total_change <= 0 else 'positive'} {name} contributor: {key} "
-                f"{top['change']:+,.0f} {metric} (current {top['current']}, baseline {top['baseline']})."
+                f"{top['change']:+,.0f} {metric} (current {analysis.fmt_metrics(top['current'])}; baseline {analysis.fmt_metrics(top['baseline'])})."
             )
     if breakdowns["page"]["largest_negative"]:
         nxt.append(
@@ -1335,7 +1341,9 @@ async def gsc_query_analysis(
             "devices": devices["negative"] + devices["positive"],
             "countries": _trim(countries["negative"], limit) + _trim(countries["positive"], limit),
         },
-        evidence=[f"Query {q(query)} {p.label()}: current {rounded(cur)}, baseline {rounded(base)}."],
+        evidence=[
+            f"Query {q(query)} {p.label()}: current {analysis.fmt_metrics(cur)}; baseline {analysis.fmt_metrics(base)}."
+        ],
         warnings=p.warnings
         + (
             []

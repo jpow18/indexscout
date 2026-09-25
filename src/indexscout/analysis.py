@@ -83,6 +83,14 @@ def fmt_ctr(ctr: float) -> str:
     return f"{ctr * 100:.1f}%"
 
 
+def fmt_metrics(m: Record | None) -> str:
+    """Readable metrics for evidence text; None means the key was absent from returned rows."""
+    if m is None:
+        return "absent from returned rows"
+    pos = f", average position {m['position']:.1f}" if m.get("position") is not None else ""
+    return f"{int(m['clicks']):,} clicks, {int(m['impressions']):,} impressions, {fmt_ctr(m['ctr'])} CTR{pos}"
+
+
 def q(value: object) -> str:
     """Quote an untrusted string for use inside generated prose, so it reads as data."""
     return json.dumps(str(value), ensure_ascii=False)
