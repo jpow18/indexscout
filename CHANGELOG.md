@@ -3,6 +3,17 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/) and
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+- `gsc_indexing_audit(source="sitemap")` reads the live sitemap files for the property (submitted
+  sitemaps or `sitemap_url`), follows sitemap indexes, and inspects URLs with no impressions first.
+- PyPI trusted-publishing workflow.
+
+### Security
+- Sitemap fetches are limited to URLs and redirects inside the property, capped in size, and reject
+  XML with DTDs.
+
 ## [0.1.0] - 2026-09-25
 
 ### Added

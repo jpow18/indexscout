@@ -20,6 +20,10 @@ Only the latest release receives security fixes.
   (`sites.list`, `searchanalytics.query`, `urlInspection.index.inspect`, `sitemaps.list`). There is
   no code for adding or deleting sites, submitting or deleting sitemaps, or the Indexing API. Tests
   enforce this.
+- **One non-Google request.** For sitemap audits, IndexScout GETs sitemap files, because the API does
+  not list their URLs. It fetches only URLs inside the selected property, follows redirects only
+  inside the property, reads at most 10 files (10 MB each, 50 MB uncompressed), and rejects XML with
+  DOCTYPE or ENTITY declarations.
 - **Local only.** The MCP server speaks stdio. It opens no network listener. `indexscout auth login`
   binds a one-time loopback listener on `localhost` for the OAuth redirect and closes it.
 - **Token storage.** Only the refresh token and OAuth client identity are stored, in the OS keyring

@@ -44,6 +44,7 @@ Agent:  gsc_site_snapshot → gsc_diagnose_change → gsc_find_opportunities →
 | Weak CTR | "Which high-impression pages have unusually weak CTR?" | `gsc_find_opportunities(category="low_ctr")` |
 | Cannibalization | "Is one query split across competing pages?" | `gsc_find_cannibalization` |
 | Indexing | "Which important URLs are not indexed?" | `gsc_indexing_audit` |
+| Sitemap coverage | "Are the URLs in my sitemap indexed?" | `gsc_indexing_audit(source="sitemap")` |
 | Devices | "Are mobile results behaving differently from desktop?" | `gsc_diagnose_change`, `gsc_site_snapshot` |
 | Portfolio | "Which properties need attention?" | `gsc_list_properties`, `gsc_site_snapshot` |
 | Evidence | "What evidence supports this recommendation?" | `gsc_search_analytics` |
@@ -274,7 +275,7 @@ All tools are read-only and return the same envelope:
 | `gsc_query_analysis` | How do we do for this search? | Pages, trend, device/country, competing pages, new/growing/declining/stable label. |
 | `gsc_find_cannibalization` | Is a query split across pages? | `possible_competition`, `likely_intent_split`, or `review`, with rules in provenance. |
 | `gsc_inspect_url` | Is this URL indexed? | Verdict, coverage, crawl, canonicals, robots, fetch, referrers, sitemaps. Indexed version, not live. |
-| `gsc_indexing_audit` | Which important URLs have problems? | ≤ 50 URLs from a list, top pages, or losing pages; grouped; partial failures kept. |
+| `gsc_indexing_audit` | Which important URLs have problems? | ≤ 50 URLs from a list, top pages, losing pages, or live sitemap files (URLs with no impressions first); grouped; partial failures kept. |
 | `gsc_list_sitemaps` | Are sitemaps healthy? | Submission/download dates, pending, errors, warnings, content counts. |
 
 ### Opportunity scoring
@@ -306,6 +307,8 @@ baseline, −0.2 when they fell ≥ 20%, else 0. The score ranks work; it is not
 - Refresh token in the OS keyring, or an atomic `0600` file with a warning; access tokens in memory.
 - Tokens, codes, client secrets, API responses, queries, URLs, and property data are never logged.
 - Optional exact property allowlist; URL Inspection targets must belong to the property.
+- The only non-Google request is a GET of a sitemap file inside the property (for sitemap audits).
+  Redirects must stay inside the property; files are size-limited; XML with DTDs is rejected.
 - GSC strings are sanitized, quoted, and labeled untrusted; agents are told never to follow them.
 
 Details: [SECURITY.md](SECURITY.md) and [docs/threat-model.md](docs/threat-model.md).
@@ -320,7 +323,8 @@ Details: [SECURITY.md](SECURITY.md) and [docs/threat-model.md](docs/threat-model
 - Discover and Google News have no query dimension and no position.
 - URL Inspection shows Google's indexed version, not a live test, and allows about 2,000
   inspections per property per day (600 per minute).
-- The API does not list the URLs inside a sitemap.
+- The API does not list the URLs inside a sitemap. IndexScout reads the live sitemap files from your
+  site instead, so the audit uses the current file, which can differ from the version Google last read.
 - Quota errors (HTTP 429) usually clear after about 15 minutes.
 
 ## Troubleshooting

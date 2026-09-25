@@ -78,10 +78,15 @@ adjusted for trend. Treat the score as a ranking aid, not a forecast. Use `categ
 recommend a content and intent review.
 
 ### Audit important URLs for indexing
-`gsc_indexing_audit(source="urls", urls=[...])`, or `source="top_pages"` / `"losing_pages"`.
-Groups: not_indexed, blocked, fetch_problem, canonical_mismatch, inspection_unavailable, errors,
-stale_crawl, recently_crawled, indexed_normally. Inspection quota is about 2,000 URLs per property
-per day. The API cannot list the URLs inside a sitemap.
+`gsc_indexing_audit(source="urls", urls=[...])`, or `source="top_pages"`, `"losing_pages"`, or
+`"sitemap"`. Groups: not_indexed, blocked, fetch_problem, canonical_mismatch, inspection_unavailable,
+errors, stale_crawl, recently_crawled, indexed_normally. Inspection quota is about 2,000 URLs per
+property per day.
+
+`source="sitemap"` reads the live sitemap files (the API does not list their URLs) and inspects URLs
+with no impressions first. "No impressions in returned rows" is a reason to inspect, not proof that
+a URL is unindexed. The live file can differ from the version Google last downloaded; compare with
+`gsc_list_sitemaps` (`last_downloaded`).
 
 ## Writing the answer
 
