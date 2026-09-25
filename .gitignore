@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Credentials and local state: never commit these.
+.env
+.env.*
+!.env.example
+client_secret*.json
+credentials*.json
+service-account*.json
+*service_account*.json
+token*.json
+*.pem
+*.p12
+*.key
+.tmpcfg/
+.indexscout/
+
+# Exported GSC data
+*.csv
+exports/
