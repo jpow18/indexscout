@@ -35,5 +35,10 @@ names, private URLs, or real GSC exports to tests, fixtures, issues, or docs. Us
 
 ## Releases
 
-Update `CHANGELOG.md` and the version in `pyproject.toml`, `src/indexscout/__init__.py`, the plugin
-manifests, `mcpb/manifest.json`, and the pinned tag in `.mcp.json`. Tag `vX.Y.Z` after CI passes.
+1. Update `CHANGELOG.md` and the version in `pyproject.toml`, `src/indexscout/__init__.py`, the
+   plugin manifests, `mcpb/manifest.json`, and the pinned version in `.mcp.json` and `examples/`.
+2. Push to `main` and wait for CI.
+3. Tag `vX.Y.Z` and publish a GitHub release. The `Publish to PyPI` workflow builds, checks that
+   the tag matches the version, and uploads with PyPI trusted publishing (no stored token). Only
+   `v*` tags can deploy to the `pypi` environment.
+4. Attach `dist/indexscout.mcpb` from `scripts/build_mcpb.sh` to the release.

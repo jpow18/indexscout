@@ -2,7 +2,7 @@
   "manifest_version": "0.4",
   "name": "indexscout",
   "display_name": "IndexScout",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Read-only Google Search Console investigations for agents.",
   "long_description": "IndexScout compares periods, diagnoses traffic changes, ranks opportunities on existing pages, classifies cannibalization, and audits indexing using read-only Search Console access. Run `indexscout auth login` once in a terminal before use.",
   "author": {

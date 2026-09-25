@@ -174,7 +174,7 @@ For unattended automation (CI, scheduled reports):
 | `INDEXSCOUT_TOKEN_STORE` | `auto` (default), `keyring`, or `file`. |
 | `INDEXSCOUT_CONFIG_DIR` | Override the config directory. |
 
-See [`.env.example`](.env.example). No `.env` file is required.
+See [`.env.example`](https://github.com/jpow18/indexscout/blob/main/.env.example). No `.env` file is required.
 
 ## Codex setup
 
@@ -191,7 +191,7 @@ codex plugin add indexscout@indexscout
 codex mcp add indexscout -- uvx --from git+https://github.com/jpow18/indexscout@v0.1.0 indexscout serve
 ```
 
-Copy [`skills/indexscout`](skills/indexscout) to `~/.codex/skills/` if you want the skill without
+Copy [`skills/indexscout`](https://github.com/jpow18/indexscout/blob/main/skills/indexscout) to `~/.codex/skills/` if you want the skill without
 the plugin.
 
 ## Claude setup
@@ -216,7 +216,7 @@ claude mcp add --scope user indexscout -- uvx --from git+https://github.com/jpow
 
 ## Other MCP clients
 
-Any stdio MCP client works ([`examples/mcp.json`](examples/mcp.json)):
+Any stdio MCP client works ([`examples/mcp.json`](https://github.com/jpow18/indexscout/blob/main/examples/mcp.json)):
 
 ```json
 {
@@ -232,7 +232,7 @@ Any stdio MCP client works ([`examples/mcp.json`](examples/mcp.json)):
 ## Agent workflow
 
 The server sends instructions at initialization, every tool description says when to use it, and
-the bundled [`indexscout` skill](skills/indexscout/SKILL.md) teaches the workflows: weekly review,
+the bundled [`indexscout` skill](https://github.com/jpow18/indexscout/blob/main/skills/indexscout/SKILL.md) teaches the workflows: weekly review,
 traffic-loss diagnosis, page evaluation, opportunity finding, cannibalization, indexing audits, and
 how to avoid unsupported SEO conclusions.
 
@@ -311,7 +311,7 @@ baseline, −0.2 when they fell ≥ 20%, else 0. The score ranks work; it is not
   Redirects must stay inside the property; files are size-limited; XML with DTDs is rejected.
 - GSC strings are sanitized, quoted, and labeled untrusted; agents are told never to follow them.
 
-Details: [SECURITY.md](SECURITY.md) and [docs/threat-model.md](docs/threat-model.md).
+Details: [SECURITY.md](https://github.com/jpow18/indexscout/blob/main/SECURITY.md) and [docs/threat-model.md](https://github.com/jpow18/indexscout/blob/main/docs/threat-model.md).
 
 ## Google API limitations
 
@@ -342,7 +342,7 @@ Details: [SECURITY.md](SECURITY.md) and [docs/threat-model.md](docs/threat-model
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Tests use a fake Search Console, so no credentials are
+See [CONTRIBUTING.md](https://github.com/jpow18/indexscout/blob/main/CONTRIBUTING.md). Tests use a fake Search Console, so no credentials are
 needed. Please keep IndexScout read-only and evidence-first.
 
 ## Acknowledgements
@@ -353,4 +353,4 @@ with it.
 
 ## License
 
-[MIT](LICENSE) © 2026 James Pow
+[MIT](https://github.com/jpow18/indexscout/blob/main/LICENSE) © 2026 James Pow

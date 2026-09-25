@@ -1,6 +1,6 @@
 {
   "name": "indexscout",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Read-only Google Search Console MCP server and skill for evidence-backed search investigations.",
   "author": { "name": "James Pow", "url": "https://github.com/jpow18" },
   "homepage": "https://github.com/jpow18/indexscout",
