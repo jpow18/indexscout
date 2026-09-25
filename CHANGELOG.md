@@ -3,11 +3,12 @@
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/) and
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.2.0] - 2026-09-25
 
 ### Added
 - `gsc_indexing_audit(source="sitemap")` reads the live sitemap files for the property (submitted
   sitemaps or `sitemap_url`), follows sitemap indexes, and inspects URLs with no impressions first.
+- Published on PyPI: `uvx indexscout`. Plugin and example MCP configs now use `uvx indexscout@0.2.0 serve`.
 - PyPI trusted-publishing workflow.
 
 ### Security

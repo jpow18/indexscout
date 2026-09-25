@@ -97,15 +97,14 @@ Agent: (gsc_diagnose_change metric=clicks)
 Requires [uv](https://docs.astral.sh/uv/). IndexScout runs on Python 3.11+ (uv installs it if needed).
 
 ```bash
-# Put the `indexscout` command on your PATH
-uv tool install git+https://github.com/jpow18/indexscout@v0.1.0
+# Run without installing
+uvx indexscout doctor
 
-# Or run without installing
-uvx --from git+https://github.com/jpow18/indexscout@v0.1.0 indexscout doctor
+# Or put the `indexscout` command on your PATH
+uv tool install indexscout
 ```
 
-IndexScout is not on PyPI yet, so `uvx indexscout` does not work until it is published; use the
-`--from git+...` form above.
+MCP configs below pin a version (`indexscout@0.2.0`) so an upgrade is always a deliberate change.
 
 Development install:
 
@@ -188,7 +187,7 @@ codex plugin add indexscout@indexscout
 **MCP server only:**
 
 ```bash
-codex mcp add indexscout -- uvx --from git+https://github.com/jpow18/indexscout@v0.1.0 indexscout serve
+codex mcp add indexscout -- uvx indexscout@0.2.0 serve
 ```
 
 Copy [`skills/indexscout`](https://github.com/jpow18/indexscout/blob/main/skills/indexscout) to `~/.codex/skills/` if you want the skill without
@@ -206,7 +205,7 @@ claude plugin install indexscout@indexscout
 **Claude Code MCP only:**
 
 ```bash
-claude mcp add --scope user indexscout -- uvx --from git+https://github.com/jpow18/indexscout@v0.1.0 indexscout serve
+claude mcp add --scope user indexscout -- uvx indexscout@0.2.0 serve
 ```
 
 **Claude Desktop:** download `indexscout.mcpb` from the
@@ -223,7 +222,7 @@ Any stdio MCP client works ([`examples/mcp.json`](https://github.com/jpow18/inde
   "mcpServers": {
     "indexscout": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/jpow18/indexscout@v0.1.0", "indexscout", "serve"]
+      "args": ["indexscout@0.2.0", "serve"]
     }
   }
 }

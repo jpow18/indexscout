@@ -2,7 +2,10 @@
   "mcpServers": {
     "indexscout": {
       "command": "uvx",
-      "args": ["--from", "git+https://github.com/jpow18/indexscout@v0.1.0", "indexscout", "serve"]
+      "args": [
+        "indexscout@0.2.0",
+        "serve"
+      ]
     }
   }
 }
