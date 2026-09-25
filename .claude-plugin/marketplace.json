@@ -1,0 +1,14 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "indexscout",
+  "description": "IndexScout: read-only Google Search Console investigations for agents.",
+  "owner": { "name": "James Pow", "url": "https://github.com/jpow18" },
+  "plugins": [
+    {
+      "name": "indexscout",
+      "description": "Read-only Google Search Console MCP server and investigation skill.",
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}

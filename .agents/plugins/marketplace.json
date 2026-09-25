@@ -1,0 +1,12 @@
+{
+  "name": "indexscout",
+  "interface": { "displayName": "IndexScout" },
+  "plugins": [
+    {
+      "name": "indexscout",
+      "source": { "source": "local", "path": "./" },
+      "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
+      "category": "Productivity"
+    }
+  ]
+}

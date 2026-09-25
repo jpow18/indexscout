@@ -1,0 +1,26 @@
+{
+  "name": "indexscout",
+  "version": "0.1.0",
+  "description": "Read-only Google Search Console MCP server and skill for evidence-backed search investigations.",
+  "author": { "name": "James Pow", "url": "https://github.com/jpow18" },
+  "homepage": "https://github.com/jpow18/indexscout",
+  "repository": "https://github.com/jpow18/indexscout",
+  "license": "MIT",
+  "keywords": ["seo", "google-search-console", "mcp", "analytics"],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "IndexScout",
+    "shortDescription": "Evidence-first Google Search Console investigations",
+    "longDescription": "Compare periods, diagnose traffic changes, find ranking opportunities on existing pages, check cannibalization, and audit indexing with read-only Search Console access.",
+    "developerName": "James Pow",
+    "category": "Productivity",
+    "capabilities": ["Read"],
+    "websiteURL": "https://github.com/jpow18/indexscout",
+    "defaultPrompt": [
+      "What should I work on in search this week?",
+      "Why did organic clicks fall last week?",
+      "Which pages have high impressions but weak CTR?"
+    ]
+  }
+}

@@ -1,0 +1,117 @@
+{
+  "manifest_version": "0.4",
+  "name": "indexscout",
+  "display_name": "IndexScout",
+  "version": "0.1.0",
+  "description": "Read-only Google Search Console investigations for agents.",
+  "long_description": "IndexScout compares periods, diagnoses traffic changes, ranks opportunities on existing pages, classifies cannibalization, and audits indexing using read-only Search Console access. Run `indexscout auth login` once in a terminal before use.",
+  "author": {
+    "name": "James Pow",
+    "url": "https://github.com/jpow18"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jpow18/indexscout"
+  },
+  "homepage": "https://github.com/jpow18/indexscout",
+  "license": "MIT",
+  "keywords": [
+    "seo",
+    "google-search-console",
+    "analytics"
+  ],
+  "server": {
+    "type": "uv",
+    "entry_point": "src/indexscout/__main__.py",
+    "mcp_config": {
+      "command": "uv",
+      "args": [
+        "run",
+        "--directory",
+        "${__dirname}",
+        "indexscout",
+        "serve"
+      ],
+      "env": {
+        "INDEXSCOUT_ALLOWED_PROPERTIES": "${user_config.allowed_properties}",
+        "INDEXSCOUT_CLIENT_SECRETS": "${user_config.client_secrets}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "gsc_capabilities",
+      "description": "Explain what IndexScout can do, whether it is authenticated, and which properties it may use."
+    },
+    {
+      "name": "gsc_list_properties",
+      "description": "List Search Console properties with exact identifiers, permission level, and local-policy status."
+    },
+    {
+      "name": "gsc_search_analytics",
+      "description": "Low-level Search Analytics rows with explicit dates, dimensions, filters, and pagination."
+    },
+    {
+      "name": "gsc_site_snapshot",
+      "description": "Answer \"How is this property doing?\" Current vs previous equal-length period."
+    },
+    {
+      "name": "gsc_diagnose_change",
+      "description": "Answer \"Why did clicks or impressions change?\" by decomposing the change, without claiming cause."
+    },
+    {
+      "name": "gsc_find_opportunities",
+      "description": "Answer \"What should I work on?\" with ranked, evidence-backed opportunities on existing pages."
+    },
+    {
+      "name": "gsc_page_analysis",
+      "description": "Answer \"What is happening with this page?\" for one exact URL."
+    },
+    {
+      "name": "gsc_query_analysis",
+      "description": "Answer \"How do we perform for this search?\" for one exact query."
+    },
+    {
+      "name": "gsc_find_cannibalization",
+      "description": "Find queries that Google shows for more than one page, and classify each split."
+    },
+    {
+      "name": "gsc_inspect_url",
+      "description": "Show Google's index status for one URL: verdict, coverage, last crawl, canonicals, robots.txt, indexing and fetch state, referring URLs, and sitemaps."
+    },
+    {
+      "name": "gsc_indexing_audit",
+      "description": "Inspect a bounded set of URLs concurrently and group them by indexing problem."
+    },
+    {
+      "name": "gsc_list_sitemaps",
+      "description": "List submitted sitemaps with submission and download dates, pending state, errors, warnings, and content counts. Read-only: IndexScout never submits or deletes sitemaps."
+    }
+  ],
+  "user_config": {
+    "allowed_properties": {
+      "type": "string",
+      "title": "Allowed properties",
+      "description": "Optional comma-separated exact GSC property identifiers, e.g. sc-domain:example.com. Empty allows all accessible properties.",
+      "required": false,
+      "default": ""
+    },
+    "client_secrets": {
+      "type": "file",
+      "title": "OAuth client JSON",
+      "description": "Optional path to your Desktop OAuth client file. Default: the IndexScout config directory.",
+      "required": false,
+      "default": ""
+    }
+  },
+  "compatibility": {
+    "platforms": [
+      "darwin",
+      "linux",
+      "win32"
+    ],
+    "runtimes": {
+      "python": ">=3.11"
+    }
+  }
+}
