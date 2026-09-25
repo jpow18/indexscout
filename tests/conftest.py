@@ -79,6 +79,17 @@ class FakeClient:
         self.bodies: list[dict[str, Any]] = []
         self.inspections: list[str] = []
         self.inspect_failures: set[str] = set()
+        self.fetched: list[str] = []
+        self.files = {
+            SITE + "/sitemap.xml": _xml(
+                "sitemapindex",
+                "sitemap",
+                ["/sitemap-pages.xml", "/sitemap-missing.xml", "https://evil.example.net/s.xml"],
+            ),
+            SITE + "/sitemap-pages.xml": _xml(
+                "urlset", "url", ["/", "/pricing", "/never-seen", "/guide", "https://other.example.org/x"]
+            ),
+        }
         self.sites = [
             {"siteUrl": PROP, "permissionLevel": "siteOwner"},
             {"siteUrl": "https://other.example.org/", "permissionLevel": "siteFullUser"},
@@ -154,6 +165,14 @@ class FakeClient:
             status |= {"googleCanonical": SITE + "/", "lastCrawlTime": "2025-01-01T00:00:00Z"}
         return {"indexStatusResult": status, "inspectionResultLink": "https://search.google.com/x"}
 
+    async def fetch_sitemap_file(self, prop: str, url: str) -> bytes:
+        from indexscout.gsc import GSCError
+
+        self.fetched.append(url)
+        if url not in self.files:
+            raise GSCError("Sitemap fetch failed: HTTP 404.")
+        return self.files[url]
+
     async def list_sitemaps(self, prop: str) -> list[dict[str, Any]]:
         return [
             {
@@ -168,6 +187,13 @@ class FakeClient:
                 "contents": [{"type": "web", "submitted": "120", "indexed": "0"}],
             }
         ]
+
+
+def _xml(root: str, entry: str, locs: list[str]) -> bytes:
+    items = "".join(
+        f"<{entry}><loc>{loc if loc.startswith('http') else SITE + loc}</loc></{entry}>" for loc in locs
+    )
+    return f'<?xml version="1.0"?><{root} xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{items}</{root}>'.encode()
 
 
 def _match(value: str, op: str, expr: str) -> bool:

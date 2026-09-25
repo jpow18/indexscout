@@ -71,9 +71,9 @@ def test_no_write_or_indexing_capability():
     assert not [n for n in server.TOOL_NAMES if any(f in n for f in forbidden_tools)]
     code = "\n".join(p.read_text() for p in SRC.glob("*.py"))
     for call in (
-        ".add(",
-        ".delete(",
-        ".submit(",
+        "().add(",
+        "().delete(",
+        "().submit(",
         "sites().add",
         "sitemaps().submit",
         'build("indexing"',
@@ -291,8 +291,6 @@ def test_indexing_audit_partial_failures(fake):
     assert len(body["results"]["urls"]) == 3
     losing = run(server.gsc_indexing_audit, PROP, source="losing_pages")
     assert losing["results"]["urls"][0]["url"] == SITE + "/pricing"
-    sm = run(server.gsc_indexing_audit, PROP, source="sitemap")
-    assert "does not list" in sm["summary"]
 
 
 def test_inspect_and_sitemaps(fake):
@@ -386,3 +384,33 @@ def test_evidence_is_readable_and_next_calls_have_no_nulls(fake):
     opp = run(server.gsc_find_opportunities, PROP, limit=1)
     for c in opp["recommended_next_calls"]:
         assert None not in c["arguments"].values()
+
+
+def test_indexing_audit_from_live_sitemaps(fake):
+    body = run(server.gsc_indexing_audit, PROP, source="sitemap")
+    prov = body["provenance"]
+    assert prov["sitemap_urls_found"] == 4  # the off-property entry is ignored
+    assert prov["sitemap_urls_without_impressions_in_returned_rows"] == 1
+    order = [i["url"] for i in body["results"]["urls"]]
+    assert order[0] == SITE + "/never-seen"  # no impressions -> inspected first
+    assert set(order) == {SITE + "/", SITE + "/pricing", SITE + "/guide", SITE + "/never-seen"}
+    files = {f["sitemap"]: f["status"] for f in prov["sitemap_files"]}
+    assert files == {
+        SITE + "/sitemap.xml": "read",
+        SITE + "/sitemap-pages.xml": "read",
+        SITE + "/sitemap-missing.xml": "error",
+    }
+    assert "https://evil.example.net/s.xml" not in fake.fetched
+    assert any("outside the property" in w for w in body["warnings"])
+    assert any("HTTP 404" in w for w in body["warnings"])
+
+
+def test_sitemap_audit_explicit_url_and_empty(fake):
+    with pytest.raises(v.ValidationError, match="does not belong"):
+        run(server.gsc_indexing_audit, PROP, source="sitemap", sitemap_url="https://evil.example.net/s.xml")
+    body = run(server.gsc_indexing_audit, PROP, source="sitemap", sitemap_url=SITE + "/sitemap-pages.xml")
+    assert body["provenance"]["sitemap_urls_found"] == 4
+    fake.files.clear()
+    fake.inspections.clear()
+    empty = run(server.gsc_indexing_audit, PROP, source="sitemap")
+    assert "No page URLs" in empty["summary"] and fake.inspections == []

@@ -423,7 +423,8 @@ LIMITATIONS = [
     "fetches one bounded page per analysis and flags possible truncation.",
     "URL Inspection reports Google's indexed version, not a live test, and is limited to about 2,000 "
     "inspections per property per day.",
-    "The API does not list the URLs inside a sitemap.",
+    "The API does not list the URLs inside a sitemap; gsc_indexing_audit(source='sitemap') fetches the live "
+    "sitemap files from the property's own site instead.",
     "IndexScout is read-only: it cannot submit sitemaps, request indexing, or change properties.",
 ]
 EXAMPLE_QUESTIONS = [
@@ -1477,6 +1478,59 @@ async def gsc_inspect_url(
     )
 
 
+MAX_SITEMAP_FILES = 10
+MAX_SITEMAP_URLS = 50_000
+
+
+async def _sitemap_urls(
+    prop: str, sitemap_url: str | None
+) -> tuple[list[str], list[dict[str, Any]], list[str]]:
+    """Read page URLs from live sitemap files inside the property, following sitemap indexes.
+
+    Roots are `sitemap_url` or the sitemaps submitted in Search Console. Files and URLs outside
+    the property are skipped. Fetch failures become warnings, never lost results.
+    """
+    if sitemap_url:
+        queue = [v.require_url_in_property(sitemap_url, prop)]
+    else:
+        queue = [m["path"] for m in await get_client().list_sitemaps(prop) if m.get("path")]
+    warnings: list[str] = []
+    skipped = [u for u in queue if not v.url_in_property(u, prop)]
+    queue = [u for u in queue if v.url_in_property(u, prop)]
+    if skipped:
+        warnings.append(f"{len(skipped)} submitted sitemaps are outside the property and were skipped.")
+    if not queue:
+        warnings.append("Search Console lists no sitemaps for this property. Pass `sitemap_url` to read one.")
+    urls: dict[str, None] = {}
+    files: list[dict[str, Any]] = []
+    visited: set[str] = set()
+    outside = 0
+    while queue and len(visited) < MAX_SITEMAP_FILES and len(urls) < MAX_SITEMAP_URLS:
+        url = queue.pop(0)
+        if url in visited:
+            continue
+        visited.add(url)
+        try:
+            kind, locs = analysis.parse_sitemap(await get_client().fetch_sitemap_file(prop, url))
+        except (GSCError, ValueError) as exc:
+            files.append({"sitemap": url, "status": "error", "error": str(exc)})
+            warnings.append(f"Could not read sitemap {q(url)}: {exc}")
+            continue
+        inside = [loc for loc in locs if v.url_in_property(loc, prop)]
+        outside += len(locs) - len(inside)
+        files.append({"sitemap": url, "status": "read", "type": kind, "entries": len(locs)})
+        if kind == "sitemapindex":
+            queue += [loc for loc in inside if loc not in visited]
+        else:
+            for loc in inside[: MAX_SITEMAP_URLS - len(urls)]:
+                urls[loc] = None
+    if queue:
+        warnings.append(f"Stopped after {len(visited)} sitemap files or {MAX_SITEMAP_URLS:,} URLs.")
+    if outside:
+        warnings.append(f"{outside} sitemap entries point outside the property and were ignored.")
+    return list(urls), files, warnings
+
+
 @tool
 async def gsc_indexing_audit(
     property: Property,
@@ -1484,7 +1538,8 @@ async def gsc_indexing_audit(
         Literal["urls", "top_pages", "losing_pages", "sitemap"],
         Field(
             description="urls: inspect `urls`. top_pages: pages with most clicks. losing_pages: pages that lost the "
-            "most impressions vs the previous period. sitemap: not available through the API (explains why)."
+            "most impressions vs the previous period. sitemap: URLs read from the property's submitted "
+            "sitemap files (or `sitemap_url`), URLs without impressions first."
         ),
     ] = "urls",
     urls: Annotated[
@@ -1494,8 +1549,18 @@ async def gsc_indexing_audit(
     start_date: StartDate = None,
     end_date: EndDate = None,
     max_urls: Annotated[int, Field(description="Maximum URLs to inspect (1-50).", ge=1, le=50)] = 20,
+    sitemap_url: Annotated[
+        str | None,
+        Field(
+            description="Optional sitemap file inside the property when source='sitemap'. Default: the "
+            "sitemaps submitted in Search Console."
+        ),
+    ] = None,
 ) -> dict[str, Any]:
     """Inspect a bounded set of URLs concurrently and group them by indexing problem.
+
+    source='sitemap' fetches the live sitemap files (the API does not list their URLs) and inspects
+    URLs with no impressions first, since those are the likeliest to be unindexed.
 
     Groups: not_indexed, blocked, fetch_problem, canonical_mismatch, inspection_unavailable, errors,
     stale_crawl, recently_crawled, indexed_normally. Per-URL failures never discard other results.
@@ -1505,25 +1570,36 @@ async def gsc_indexing_audit(
     warnings: list[str] = []
     prov: dict[str, Any] = {"property": prop, "source": source}
     if source == "sitemap":
-        return envelope(
-            "The Search Console API does not list the URLs inside a sitemap, so IndexScout cannot audit a sitemap "
-            "directly.",
-            {"groups": {}, "urls": []},
-            limitations=[
-                "Pass the important URLs explicitly with source='urls', or use top_pages/losing_pages."
-            ],
-            next_calls=[
-                call("gsc_list_sitemaps", "See sitemap status and counts.", property=prop),
-                call(
-                    "gsc_indexing_audit",
-                    "Audit pages with the most clicks.",
-                    property=prop,
-                    source="top_pages",
-                ),
-            ],
-            provenance=prov,
-        )
-    if source == "urls":
+        found, files, sm_warnings = await _sitemap_urls(prop, sitemap_url)
+        warnings += sm_warnings
+        if not found:
+            return envelope(
+                "No page URLs were read from the property's sitemaps.",
+                {"groups": {}, "urls": [], "sitemap_files": files},
+                warnings=warnings,
+                limitations=["Pass important URLs with source='urls', or use top_pages/losing_pages."],
+                next_calls=[call("gsc_list_sitemaps", "See which sitemaps Google has.", property=prop)],
+                provenance=prov,
+            )
+        p = await resolve_periods(prop, days, start_date, end_date)
+        pages = await fetch(prop, *p.cur, ["page"])
+        seen = {r["page"] for r in pages.records if r["impressions"]}
+        without = [u for u in found if u not in seen]
+        # URLs with no impressions are the likeliest indexing problems, so inspect them first.
+        targets = without + [u for u in found if u in seen]
+        prov |= p.provenance(prop, dimensions=[["page"]], search_type="web") | {
+            "sitemap_files": files,
+            "sitemap_urls_found": len(found),
+            "sitemap_urls_with_impressions": len(found) - len(without),
+            "sitemap_urls_without_impressions_in_returned_rows": len(without),
+            "inspection_order": "sitemap URLs without impressions first, then the rest, in sitemap order",
+        }
+        warnings += p.warnings
+        if pages.meta["possibly_more_rows"]:
+            warnings.append(
+                "Page rows hit the request limit; some URLs may have impressions that are not shown."
+            )
+    elif source == "urls":
         if not urls:
             raise v.ValidationError("Give `urls`, or use source='top_pages' or 'losing_pages'.")
         targets = list(dict.fromkeys(v.require_url_in_property(u, prop) for u in urls))
@@ -1613,11 +1689,17 @@ async def gsc_list_sitemaps(property: Property) -> dict[str, Any]:
         out,
         warnings=[f"{len(maps)} sitemaps; showing 100."] if len(maps) > 100 else [],
         limitations=[
-            "The API reports sitemap status and counts, not the URLs inside each sitemap.",
+            "The API reports sitemap status and counts, not the URLs inside each sitemap. Use "
+            "gsc_indexing_audit(source='sitemap') to read the live files and inspect their URLs.",
             "The 'indexed' count in contents is often not populated by Google.",
         ],
         next_calls=[
-            call("gsc_indexing_audit", "Audit important pages directly.", property=prop, source="top_pages")
+            call(
+                "gsc_indexing_audit",
+                "Inspect sitemap URLs, starting with those that get no impressions.",
+                property=prop,
+                source="sitemap",
+            )
         ],
         provenance={"property": prop, "source": "sitemaps.list"},
     )

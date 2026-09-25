@@ -11,6 +11,8 @@ Conventions:
 from __future__ import annotations
 
 import json
+import re
+import xml.etree.ElementTree as ET
 from collections import defaultdict
 from collections.abc import Iterable, Sequence
 from datetime import date, datetime
@@ -549,3 +551,35 @@ def inspection_groups(summary: Record | None, error: str | None, today: date) ->
     if summary["verdict"] == "PASS" and not blocked and not mismatch:
         groups.append("indexed_normally")
     return groups
+
+
+# --- sitemap files --------------------------------------------------------------------------
+
+_DTD = re.compile(rb"<!(DOCTYPE|ENTITY)", re.IGNORECASE)
+
+
+def parse_sitemap(data: bytes) -> tuple[str, list[str]]:
+    """Return ("urlset" | "sitemapindex", locations) from sitemap XML.
+
+    Only direct <url><loc> or <sitemap><loc> values count, so image and video extension
+    locations are ignored. Documents with a DTD are rejected to block entity-expansion attacks.
+    """
+    if _DTD.search(data):
+        raise ValueError("Sitemap contains a DOCTYPE or ENTITY declaration; refusing to parse it.")
+    try:
+        root = ET.fromstring(data)  # noqa: S314 - DTDs rejected above
+    except ET.ParseError:
+        raise ValueError("Sitemap is not well-formed XML.") from None
+
+    def local(tag: str) -> str:
+        return tag.rsplit("}", 1)[-1]
+
+    kind = local(root.tag)
+    if kind not in ("urlset", "sitemapindex"):
+        raise ValueError(f"Not a sitemap: root element is {kind!r}.")
+    locs = []
+    for entry in root:
+        for child in entry:
+            if local(child.tag) == "loc" and child.text and child.text.strip():
+                locs.append(child.text.strip())
+    return kind, locs

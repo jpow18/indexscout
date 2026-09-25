@@ -168,3 +168,23 @@ def test_inspection_groups():
     assert a.inspection_groups(canon, None, today) == ["fetch_problem", "canonical_mismatch"]
     assert a.inspection_groups(None, "boom", today) == ["errors"]
     assert a.inspection_groups({"verdict": "VERDICT_UNSPECIFIED"}, None, today) == ["inspection_unavailable"]
+
+
+def test_parse_sitemap_urlset_ignores_image_locs():
+    xml = b"""<?xml version="1.0"?>
+    <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+            xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
+      <url><loc> https://example.com/a </loc><image:image><image:loc>https://example.com/a.png</image:loc>
+      </image:image></url>
+      <url><loc>https://example.com/b</loc></url>
+    </urlset>"""
+    assert a.parse_sitemap(xml) == ("urlset", ["https://example.com/a", "https://example.com/b"])
+
+
+def test_parse_sitemap_index_and_rejections():
+    idx = b"<sitemapindex><sitemap><loc>https://example.com/s1.xml</loc></sitemap></sitemapindex>"
+    assert a.parse_sitemap(idx) == ("sitemapindex", ["https://example.com/s1.xml"])
+    bomb = b'<?xml version="1.0"?><!DOCTYPE lolz [<!ENTITY lol "lol">]><urlset><url><loc>&lol;</loc></url></urlset>'
+    for bad in (bomb, b"<urlset><url>", b"<html><body/></html>"):
+        with pytest.raises(ValueError):
+            a.parse_sitemap(bad)
