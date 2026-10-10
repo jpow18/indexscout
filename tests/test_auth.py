@@ -4,10 +4,52 @@ import os
 import pathlib
 import stat
 import threading
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 
 from indexscout import auth
+
+
+def test_real_oauth_client_preserves_readonly_scope_and_pkce():
+    """Exercise the Google/requests-oauthlib/oauthlib stack without network access."""
+    import base64
+    import hashlib
+
+    from google_auth_oauthlib.flow import InstalledAppFlow
+
+    flow = InstalledAppFlow.from_client_config(
+        {
+            "installed": {
+                "client_id": "example-client",
+                "client_secret": "example-secret",
+                "auth_uri": "https://example.com/authorize",
+                "token_uri": "https://example.com/token",
+                "redirect_uris": ["http://localhost"],
+            }
+        },
+        scopes=auth.SCOPES,
+    )
+    flow.redirect_uri = "http://localhost:8080/"
+    url, state = flow.authorization_url()
+    params = parse_qs(urlsplit(url).query)
+    assert params["scope"] == auth.SCOPES
+    assert params["state"] == [state] and state
+    assert params["redirect_uri"] == [flow.redirect_uri]
+    assert params["code_challenge_method"] == ["S256"]
+    assert flow.code_verifier and 43 <= len(flow.code_verifier) <= 128
+    challenge = base64.urlsafe_b64encode(hashlib.sha256(flow.code_verifier.encode()).digest())
+    assert params["code_challenge"] == [challenge.rstrip(b"=").decode()]
+
+    flow.oauth2session.token = {
+        "access_token": "example-access-token",
+        "refresh_token": "example-refresh-token",
+        "token_type": "Bearer",
+        "scope": auth.SCOPES,
+        "expires_at": 2_000_000_000,
+    }
+    assert flow.credentials.scopes == auth.SCOPES
+    assert flow.credentials.refresh_token == "example-refresh-token"
 
 
 def test_only_readonly_scope_is_requested():
